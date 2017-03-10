@@ -7,3 +7,5 @@ coverage/lcov.info
 examples-out
 bower_components/
 build/cathFunfamApp_browserify.js
+src/**/*.js
+src/**/*.js.map

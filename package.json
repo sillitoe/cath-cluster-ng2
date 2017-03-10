@@ -1,7 +1,7 @@
 {
-  "name": "angular-quickstart",
-  "version": "1.0.0",
-  "description": "QuickStart package.json from the documentation, supplemented with testing support",
+  "name": "cath-cluster-view",
+  "version": "0.0.1",
+  "description": "View collections of protein domains: sequences, structures, alignments, features",
   "scripts": {
     "build": "tsc -p src/",
     "build:watch": "tsc -p src/ -w",

@@ -6,8 +6,22 @@
     "sourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "lib": [ "es2015", "dom" ],
+    "lib": [ "es5", "es2015.collection", "dom", "es2015.promise" ],
+    "target": "es5",
     "noImplicitAny": true,
+    "noImplicitThis": true,
+    "types": [],
     "suppressImplicitAnyIndexErrors": true
-  }
+  },
+  "files": [
+    "./litemol/js/LiteMol-plugin.d.ts",
+    
+    "./app/app.component.ts",
+    "./app/app.module.ts",
+    "./app/cath-cluster-members.component.ts",
+    "./app/cath-structure.component.ts",
+    "./app/cath-rep.component.ts",
+    "./app/cath-msa.component.ts",
+    "./app/cath-rep-features.component.ts"
+  ]
 }

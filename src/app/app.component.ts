@@ -2,36 +2,77 @@ import { Input, ElementRef, Component } from '@angular/core';
 import { CathStructureComponent } from './cath-structure.component';
 import { CathRepComponent } from './cath-rep.component';
 import { CathRepFeaturesComponent } from './cath-rep-features.component';
+import { CathClusterMembersComponent } from './cath-cluster-members.component';
 import { CathMsaComponent } from './cath-msa.component';
 
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+
+import { StructureModule } from './structure/structure.module';
+
 @Component({
-  selector: 'cath-funfam',
+  selector: 'cath-cluster',
   template: `
-    <div class="container-fluid">
+    <div class="cath-cluster container-fluid bg-fade">
       <div class="row">
-        <div class="col-md-8">        
-          <div class="">FunFam: {{name}} ({{accession}})</div>
-          <cath-structure class=""></cath-structure>
-          <cath-rep></cath-rep>
-          
-          <div class="">
-            <ul>
-              <li><a href="#1">Members</a></li>
-              <li><a href="#2">Alignment</a></li>              
-            </ul>
-            <div class="panel" id="1"></div>
-            <div class="panel" id="2">
-              <cath-msa class=""></cath-msa>            
-            </div>
-          </div>          
+        <div class="col-md-12 panel-header">
+          <div class="">{{name}} <small>{{accession}}</small></div>
         </div>
-        <div class="col-md-4">
+      </div>
+      <div class="row">
+        <div class="col-md-9 panel-main">
+          <cath-structure class=""></cath-structure>
+          <cath-rep repid={{repid}}></cath-rep>
+        </div>
+        <div class="col-md-3">
           <cath-rep-features></cath-rep-features>
         </div>
       </div>
+      <ngb-tabset type="tabs">
+        <ngb-tab>
+          <template ngbTabTitle>Members</template>
+          <template ngbTabContent>
+            <cath-cluster-members></cath-cluster-members>
+          </template>
+        </ngb-tab>
+        <ngb-tab>
+          <template ngbTabTitle>Alignment</template>
+          <template ngbTabContent>
+            <cath-msa></cath-msa>
+          </template>
+        </ngb-tab>
+      </ngb-tabset>
+      <footer class="row">
+      </footer>
     </div>
   `,
   styles: [`
+    :host .bg-fade {
+      background-color: #eee;
+    }
+    .panel-header {
+      background-color: #444;
+      color: #fff;
+      padding: 10px;
+      height: 50px;
+    }
+    .panel-main {
+      min-height: 400px;
+      padding: 20px;
+      border: 1px solid #eee;
+    }
+    
+    .panel-side {
+      z-index: 1000;
+      background-color: #ddd;
+      border-left: 1px solid #ccc;
+    }
+    :host /deep/ .tab-pane.active {
+      background-color: white;
+      padding: 20px;
+    }
+    footer {
+      padding-bottom: 20px;
+    }
   `]
 })
 
@@ -46,14 +87,15 @@ export class AppComponent {
   name: string = '<Funfam name>';
   
   @Input()
-  repId: string;
+  repid: string = '1abcA01';
   
   constructor(public elementRef: ElementRef) {
     var native = this.elementRef.nativeElement;
     var acc = native.getAttribute('accession') || this.accession;
+    var name = native.getAttribute('name') || this.name;
     this.accession = acc;
     this.parseAccession( acc );
-    console.log( "AppComponent.accession", acc );
+    this.name = name;
   }
   
   private parseAccession(ffid: string): void {

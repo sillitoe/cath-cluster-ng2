@@ -6,17 +6,22 @@ import { CathStructureComponent }  from './cath-structure.component';
 import { CathRepComponent }  from './cath-rep.component';
 import { CathRepFeaturesComponent }  from './cath-rep-features.component';
 import { CathMsaComponent }  from './cath-msa.component';
+import { CathClusterMembersComponent }  from './cath-cluster-members.component';
+
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { StructureModule } from './structure/structure.module';
 
 @NgModule({
   imports:      [ 
-    BrowserModule,
+    BrowserModule, NgbModule.forRoot(), StructureModule
   ],
-  declarations: [ 
+  declarations: [
     AppComponent,
     CathStructureComponent,
     CathRepComponent,
     CathRepFeaturesComponent,
-    CathMsaComponent
+    CathMsaComponent,
+    CathClusterMembersComponent
   ],
   bootstrap: [ AppComponent ]
 })

@@ -16,6 +16,7 @@
   "files": [
     "./litemol/js/LiteMol-plugin.d.ts",
     
+    "./main.ts",
     "./app/app.component.ts",
     "./app/app.module.ts",
     "./app/cath-cluster-members.component.ts",

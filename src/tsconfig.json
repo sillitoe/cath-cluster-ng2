@@ -17,9 +17,23 @@
     "./litemol/js/LiteMol-plugin.d.ts",
     
     "./main.ts",
+
+    "./app/helper/utils.ts",
+
     "./app/app.component.ts",
     "./app/app.module.ts",
-    "./app/cath-cluster-members.component.ts",
+
+    "./app/uniprot.ts",
+    "./app/uniprot.service.ts",
+
+    "./app/domain.ts",
+    "./app/segment.ts",
+    "./app/alignment.service.ts",
+    
+    "./app/annotations/annotation.ts",
+
+    "./app/members/member.ts",
+    "./app/members/member-list.component.ts",
     "./app/cath-structure.component.ts",
     "./app/cath-rep.component.ts",
     "./app/cath-msa.component.ts",

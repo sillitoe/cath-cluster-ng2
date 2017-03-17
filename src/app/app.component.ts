@@ -1,13 +1,9 @@
 import { Input, ElementRef, Component } from '@angular/core';
-import { CathStructureComponent } from './cath-structure.component';
-import { CathRepComponent } from './cath-rep.component';
-import { CathRepFeaturesComponent } from './cath-rep-features.component';
-import { CathClusterMembersComponent } from './cath-cluster-members.component';
-import { CathMsaComponent } from './cath-msa.component';
+
+import { UniprotService } from './uniprot.service'; 
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
-import { StructureModule } from './structure/structure.module';
 
 @Component({
   selector: 'cath-cluster',
@@ -19,11 +15,11 @@ import { StructureModule } from './structure/structure.module';
         </div>
       </div>
       <div class="row">
-        <div class="col-md-9 panel-main">
+        <div class="col-md-9 col-sm-9 panel-main">
           <cath-structure class=""></cath-structure>
           <cath-rep repid={{repid}}></cath-rep>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 col-sm-3">
           <cath-rep-features></cath-rep-features>
         </div>
       </div>
@@ -31,7 +27,7 @@ import { StructureModule } from './structure/structure.module';
         <ngb-tab>
           <template ngbTabTitle>Members</template>
           <template ngbTabContent>
-            <cath-cluster-members></cath-cluster-members>
+            <member-list></member-list>
           </template>
         </ngb-tab>
         <ngb-tab>
@@ -48,6 +44,9 @@ import { StructureModule } from './structure/structure.module';
   styles: [`
     :host .bg-fade {
       background-color: #eee;
+    }
+    cath-rep-features {
+      padding: 10px;
     }
     .panel-header {
       background-color: #444;

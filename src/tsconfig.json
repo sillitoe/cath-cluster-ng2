@@ -19,7 +19,7 @@
     "./main.ts",
 
     "./app/helper/utils.ts",
-
+    
     "./app/app.component.ts",
     "./app/app.module.ts",
 
@@ -28,15 +28,21 @@
 
     "./app/domain.ts",
     "./app/segment.ts",
+    "./app/alignment.ts",
     "./app/alignment.service.ts",
     
     "./app/annotations/annotation.ts",
 
+    "./app/cath-mda-badge.component.ts",
+    
     "./app/members/member.ts",
     "./app/members/member-list.component.ts",
     "./app/cath-structure.component.ts",
-    "./app/cath-rep.component.ts",
-    "./app/cath-msa.component.ts",
-    "./app/cath-rep-features.component.ts"
+    "./app/cath-structure-details.component.ts",
+    "./app/cath-structure-sequence.component.ts",
+
+    "./app/structure.service.ts",
+
+    "./app/cath-msa.component.ts"
   ]
 }

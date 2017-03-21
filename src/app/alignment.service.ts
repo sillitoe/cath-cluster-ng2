@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
 
-import { Member } from './members/member';
+import { Alignment } from './alignment';
+
+import { ALIGNMENT } from './mock-alignment';
 
 @Injectable()
 export class AlignmentService {
-    getMembers(): void {} //stub
+    getAlignment(): Promise<Alignment> {
+      return Promise.resolve(ALIGNMENT);
+    }
 }

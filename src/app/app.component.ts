@@ -1,9 +1,15 @@
-import { Input, ElementRef, Component } from '@angular/core';
+import { Input, ElementRef, Component, OnInit } from '@angular/core';
+
+//import * as _ from "lodash";
+
+import { Alignment } from './alignment';
+import { Member } from './members/member';
+import { Domain } from './domain';
 
 import { UniprotService } from './uniprot.service'; 
+import { AlignmentService } from './alignment.service';
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-
 
 @Component({
   selector: 'cath-cluster',
@@ -14,29 +20,42 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
           <div class="">{{name}} <small>{{accession}}</small></div>
         </div>
       </div>
-      <div class="row">
+      <div class="row" *ngIf="selectedDomain">
         <div class="col-md-9 col-sm-9 panel-main">
-          <cath-structure class=""></cath-structure>
-          <cath-rep repid={{repid}}></cath-rep>
+          <cath-structure [pdbId]="selectedDomain.pdb_id" [selectedDomain]="selectedDomain"></cath-structure>
+          <cath-structure-sequence [domain]="selectedDomain"></cath-structure-sequence>
         </div>
-        <div class="col-md-3 col-sm-3">
-          <cath-rep-features></cath-rep-features>
+        <div class="col-md-3 col-sm-3 panel-side">
+          <div class="card structure-details">
+            <h4 class="card-header card-inverse card-success">
+              Selected Domain: {{selectedDomain.id}}
+            </h4>
+            <div class="card-block">
+              <cath-structure-details [pdbId]="selectedDomain.pdb_id" [domain]="selectedDomain"></cath-structure-details>
+            </div>
+          </div>
         </div>
       </div>
-      <ngb-tabset type="tabs">
-        <ngb-tab>
-          <template ngbTabTitle>Members</template>
-          <template ngbTabContent>
-            <member-list></member-list>
-          </template>
-        </ngb-tab>
-        <ngb-tab>
-          <template ngbTabTitle>Alignment</template>
-          <template ngbTabContent>
-            <cath-msa></cath-msa>
-          </template>
-        </ngb-tab>
-      </ngb-tabset>
+      <div class="row">
+        <div class="col-md-9 col-sm-9">
+          <ngb-tabset type="tabs" *ngIf="alignment">
+            <ngb-tab>
+              <template ngbTabTitle>Members</template>
+              <template ngbTabContent>
+                <member-list [mdaFocus]="cathSfamId" [members]="alignment.members"></member-list>
+              </template>
+            </ngb-tab>
+            <ngb-tab>
+              <template ngbTabTitle>Alignment</template>
+              <template ngbTabContent>
+                <cath-msa [alignment]="alignment"></cath-msa>
+              </template>
+            </ngb-tab>
+          </ngb-tabset>        
+        </div>
+        <div class="col-md-3 col-sm-3 panel-side">
+        </div>
+      </div>
       <footer class="row">
       </footer>
     </div>
@@ -44,9 +63,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
   styles: [`
     :host .bg-fade {
       background-color: #eee;
-    }
-    cath-rep-features {
-      padding: 10px;
     }
     .panel-header {
       background-color: #444;
@@ -59,11 +75,11 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
       padding: 20px;
       border: 1px solid #eee;
     }
-    
     .panel-side {
       z-index: 1000;
       background-color: #ddd;
       border-left: 1px solid #ccc;
+      padding-top: 20px;
     }
     :host /deep/ .tab-pane.active {
       background-color: white;
@@ -72,15 +88,26 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     footer {
       padding-bottom: 20px;
     }
-  `]
+    .structure-details h4 {
+      font-size: 1.2em;
+      font-weight: normal;
+      color: white;
+    }
+  `],
+  providers: [
+    AlignmentService
+  ]
 })
 
-export class AppComponent { 
+export class AppComponent implements OnInit { 
   @Input()
   accession: string = '1.1.1.1/FF/1';
 
   cathSfamId: string;
   cathFunfamNum: number;
+  alignment: Alignment;
+  
+  selectedDomain: Domain;
 
   @Input()
   name: string = '<Funfam name>';
@@ -88,13 +115,32 @@ export class AppComponent {
   @Input()
   repid: string = '1abcA01';
   
-  constructor(public elementRef: ElementRef) {
+  constructor(public elementRef: ElementRef, private alignmentService: AlignmentService) {
     var native = this.elementRef.nativeElement;
     var acc = native.getAttribute('accession') || this.accession;
     var name = native.getAttribute('name') || this.name;
     this.accession = acc;
     this.parseAccession( acc );
     this.name = name;
+  }
+
+  ngOnInit(): void {
+    this.getAlignment();
+  }
+
+  public onSelectDomain( domain: Domain ): void {
+    this.selectedDomain = domain;
+  }
+  
+  public getAlignment() {
+    this.alignmentService.getAlignment().then( alignment => {
+      this.alignment = alignment;
+      let member: Member = this.alignment.getFirstMemberWithStructure();
+      if ( member && member.domain ) {
+        console.log( "getAlignment", member, member.domain );
+        this.onSelectDomain( member.domain );
+      }
+    });
   }
   
   private parseAccession(ffid: string): void {

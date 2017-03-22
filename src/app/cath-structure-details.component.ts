@@ -2,37 +2,25 @@ import { Component, Input, ElementRef, OnChanges, SimpleChange } from '@angular/
 
 import { Domain } from './domain';
 
-import { PdbSummary } from './pdb-summary';
-import { PdbBindingSite } from './pdb-binding-site';
-import { PdbMutatedResidue } from './pdb-mutated-residue';
+import * as PDBe from './pdbe';
+
 import { StructureService } from './structure.service';
 
 @Component({
   selector: 'cath-structure-details',
   template: `
-    <div *ngIf="pdbSummary">
-      <blockquote>{{pdbSummary.title}}</blockquote>
-      <dl class="row">
-        <dt class="col-sm-3">PDB</dt>
-        <dd class="col-sm-9">{{pdbId | uppercase}}</dd>
-        <dt class="col-sm-3">Authors</dt>
-        <dd class="col-sm-9">{{pdbSummary.entry_authors.join(', ')}}</dd>
-        <dt class="col-sm-3">Released</dt>
-        <dd class="col-sm-9">{{pdbSummary.release_date | date}}</dd>
-      </dl>
-    </div>
     <div class="row">
       <div class="col-sm-6">
         <div class="card card-inverse card-info mb-3 text-center">
           <div class="card-block">Binding Sites
-            <span class="badge badge-large badge-inverse badge-pill">{{pdbBindingSites.length}}</span>
+            <span class="badge badge-large badge-inverse badge-pill">{{bindingSites.length}}</span>
           </div>
         </div>
       </div>
       <div class="col-sm-6">
         <div class="card card-inverse card-warning mb-3 text-center">
           <div class="card-block">Mutations
-            <span class="badge badge-large badge-inverse badge-pill">{{pdbMutatedResidues.length}}</span>
+            <span class="badge badge-large badge-inverse badge-pill">{{mutatedResidues.length}}</span>
           </div>
         </div>
       </div>
@@ -46,7 +34,7 @@ import { StructureService } from './structure.service';
       font-size: 1.0em;
       font-weight: normal;
       font-style: italic;
-      padding-bottom: 10px; 
+      padding-bottom: 10px;
     }
     blockquote {
     }
@@ -61,48 +49,38 @@ import { StructureService } from './structure.service';
 
 export class CathStructureDetailsComponent implements OnChanges {
   errorMessage: string;
-  
+
   @Input()
   pdbId: string;
 
   @Input()
   domain: Domain;
-  
-  pdbSummary: PdbSummary;
-  pdbBindingSites: PdbBindingSite[] = [];
-  pdbMutatedResidues: PdbMutatedResidue[] = [];
+
+  bindingSites: PDBe.BindingSite[] = [];
+  mutatedResidues: PDBe.MutatedResidue[] = [];
   mode = 'Observable';
-  
+
   constructor(private structureService: StructureService) {}
-  
+
   ngOnChanges( changes: {[propKey: string]: SimpleChange }) {
     if ( this.pdbId ) {
-      this.getPdbSummary();
-      this.getPdbBindingSites();
-      this.getPdbMutatedResidues();
+      this.getBindingSites();
+      this.getMutatedResidues();
     }
-  }  
-  
-  getPdbSummary() {
-    this.structureService.getPdbSummary(this.pdbId)
-      .subscribe(
-        pdbSummary => this.pdbSummary = pdbSummary,
-        error => this.errorMessage = <any>error
-      );
   }
 
-  getPdbBindingSites() {
+  getBindingSites() {
     this.structureService.getPdbBindingSites(this.pdbId)
       .subscribe(
-        pdbBindingSites => this.pdbBindingSites = pdbBindingSites,
+        bindingSites => this.bindingSites = bindingSites,
         error => this.errorMessage = <any>error
       );
   }
 
-  getPdbMutatedResidues() {
+  getMutatedResidues() {
     this.structureService.getPdbMutatedResidues(this.pdbId)
       .subscribe(
-        pdbMutatedResidues => this.pdbMutatedResidues = pdbMutatedResidues,
+        mutatedResidues => this.mutatedResidues = mutatedResidues,
         error => this.errorMessage = <any>error
       );
   }

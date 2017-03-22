@@ -6,7 +6,7 @@ import { Alignment } from './alignment';
 import { Member } from './members/member';
 import { Domain } from './domain';
 
-import { UniprotService } from './uniprot.service'; 
+import { UniprotService } from './uniprot.service';
 import { AlignmentService } from './alignment.service';
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -26,12 +26,13 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
           <cath-structure-sequence [domain]="selectedDomain"></cath-structure-sequence>
         </div>
         <div class="col-md-3 col-sm-3 panel-side">
+          <pdb-summary [pdbId]="selectedDomain.pdb_id"></pdb-summary>
+          <cath-structure-details [pdbId]="selectedDomain.pdb_id" [domain]="selectedDomain"></cath-structure-details>
           <div class="card structure-details">
             <h4 class="card-header card-inverse card-success">
-              Selected Domain: {{selectedDomain.id}}
+              CATH Domain: {{selectedDomain.id}}
             </h4>
             <div class="card-block">
-              <cath-structure-details [pdbId]="selectedDomain.pdb_id" [domain]="selectedDomain"></cath-structure-details>
             </div>
           </div>
         </div>
@@ -51,7 +52,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
                 <cath-msa [alignment]="alignment"></cath-msa>
               </template>
             </ngb-tab>
-          </ngb-tabset>        
+          </ngb-tabset>
         </div>
         <div class="col-md-3 col-sm-3 panel-side">
         </div>
@@ -89,7 +90,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
       padding-bottom: 20px;
     }
     .structure-details h4 {
-      font-size: 1.2em;
+      font-size: 1.1em;
       font-weight: normal;
       color: white;
     }
@@ -99,22 +100,22 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
   ]
 })
 
-export class AppComponent implements OnInit { 
+export class AppComponent implements OnInit {
   @Input()
   accession: string = '1.1.1.1/FF/1';
 
   cathSfamId: string;
   cathFunfamNum: number;
   alignment: Alignment;
-  
+
   selectedDomain: Domain;
 
   @Input()
   name: string = '<Funfam name>';
-  
+
   @Input()
   repid: string = '1abcA01';
-  
+
   constructor(public elementRef: ElementRef, private alignmentService: AlignmentService) {
     var native = this.elementRef.nativeElement;
     var acc = native.getAttribute('accession') || this.accession;
@@ -131,7 +132,7 @@ export class AppComponent implements OnInit {
   public onSelectDomain( domain: Domain ): void {
     this.selectedDomain = domain;
   }
-  
+
   public getAlignment() {
     this.alignmentService.getAlignment().then( alignment => {
       this.alignment = alignment;
@@ -142,7 +143,7 @@ export class AppComponent implements OnInit {
       }
     });
   }
-  
+
   private parseAccession(ffid: string): void {
     var parts = ffid.split('/');
     this.cathSfamId = parts[0];

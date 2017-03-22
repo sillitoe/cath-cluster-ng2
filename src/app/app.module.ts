@@ -8,15 +8,16 @@ import { CathStructureDetailsComponent }  from './cath-structure-details.compone
 import { CathStructureSequenceComponent }  from './cath-structure-sequence.component';
 import { CathMsaComponent }  from './cath-msa.component';
 import { CathMdaBadgeComponent }  from './cath-mda-badge.component';
+import { PdbSummaryComponent }  from './pdb-summary.component';
 import { MemberListComponent }  from './members/member-list.component';
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { StructureModule } from './structure/structure.module';
 
 @NgModule({
-  imports:      [ 
-    BrowserModule, 
-    NgbModule.forRoot(), 
+  imports:      [
+    BrowserModule,
+    NgbModule.forRoot(),
     HttpModule
   ],
   declarations: [
@@ -26,6 +27,7 @@ import { StructureModule } from './structure/structure.module';
     CathStructureSequenceComponent,
     CathMsaComponent,
     CathMdaBadgeComponent,
+    PdbSummaryComponent,
     MemberListComponent
   ],
   bootstrap: [ AppComponent ]

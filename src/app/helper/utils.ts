@@ -1,10 +1,23 @@
 import { Member } from '../members/member';
 import { Segment, SegmentPosition, SegmentCoordinateType } from '../segment';
-import { Alignment } from '../alignment';
+import { ColumnAnnotation, Alignment } from '../alignment';
 import { Annotation } from '../annotations/annotation';
 import { Uniprot } from '../uniprot';
 import { Domain } from '../domain';
 
+class SequenceDatabaseReference {
+  db_name: string;
+  db_ids: string[] = [];
+}
+
+class SequenceAnnotation {
+  seq_id: string;
+  feature: string;
+  accession: string;
+  organism: string;
+  segments: Segment[] = [];
+  db_refs: SequenceDatabaseReference[] = [];
+}
 
 export type SequenceSourceToCoordinate = "CATH" | "BIOMAP";
 
@@ -13,7 +26,153 @@ export const SequenceSourceToCoordinate = {
   BIOMAP: SegmentCoordinateType.UNIPROT as SegmentCoordinateType,
 }
 
+var stockholm_feature_to_attr = {
+  AC: 'accession',
+  ID: 'id',
+  DE: 'description',
+  AU: 'author',
+  TP: 'type',
+  DR: 'db_ref',
+  DC: 'db_comment',
+  OS: 'organism',
+  OC: 'organism_classification',
+};
+
 export class Utils {
+    
+  static parseStockholm( stockholm_raw: string ) : Alignment {
+
+    let aln_args = {};
+
+    let sequences_by_id = {};
+    let sequence_annotations_by_id: SequenceAnnotation[];
+    let column_annotations = [];
+
+    let lines = stockholm_raw.split('\n');
+    let header = lines.shift();
+
+    let line_count = 1;
+    
+    let re_match_seqid = new RegExp( /^(.*?)\/([0-9,\-_]+)$/ );
+    let re_split_segments = new RegExp( /[,_]/ );
+    let re_split_gs_dr = new RegExp( /;\s+/ );
+
+    let process_gs_line = function(line: string): void {
+      let gs_parts = line.split(/\s+/, 4);
+      
+      let seq_id = gs_parts[1];
+      let feature = gs_parts[2];
+      let content = gs_parts[3];
+      
+      let seq_ann = sequence_annotations_by_id[seq_id];
+      if ( typeof seq_ann === 'undefined' ) {
+        let seq_id_parts = seq_id.match( re_match_seqid );
+        if ( !seq_id_parts || seq_id_parts.length != 2 ) {
+          console.error( `failed to parse sequence range from id '${seq_id}'` );
+          return;
+        }
+        let accession = seq_id_parts[0];
+        let segments_raw = seq_id_parts[1].split( re_split_segments );
+        let segments: Segment[] = [];
+        for ( let seg_str in segments_raw ) {
+          let seg_parts = seg_str.split('-');
+          let segment = new Segment();
+          segment.setPosition( 'START', SegmentCoordinateType.UNIPROT, seg_parts[0] );
+          segment.setPosition( 'STOP', SegmentCoordinateType.UNIPROT, seg_parts[1] );
+          segments.push(segment);
+        }
+        seq_ann = <SequenceAnnotation> {
+          seq_id,
+          accession,
+          segments
+        };
+        sequence_annotations_by_id[ seq_id ] = seq_ann;
+      }
+      
+      seq_ann.feature = feature;
+      
+      if ( feature == 'DR' ) {
+        let dr_parts = content.split( re_split_gs_dr );
+        let db_name = dr_parts.shift();
+        let db_ids = dr_parts;
+        let db_ref = <SequenceDatabaseReference> { db_name, db_ids };
+        seq_ann.db_refs.push( db_ref );
+      }
+      else {
+        let attr = stockholm_feature_to_attr[feature];
+        if ( typeof attr != 'undefined' ) {
+          seq_ann[attr] = content;
+        }
+      }
+    };
+    
+    for ( let line of lines ) {
+      line_count++;
+      line.replace(/\s+$/, '');                  // chomp new line chars
+      if ( line.length == 0 ) { continue }       // ignore blank lines
+      if ( line.substr(0,2) == '//' ) { break }  // end of alignment
+      let line_type = line.substr(0,4);
+      switch (line_type) {
+        case '#=GF': // <feature> <Generic per-file annotation>
+          let gf_parts = line.split(/\s+/, 3);
+          let feature = gf_parts[1];
+          let attr = stockholm_feature_to_attr[feature];
+          if ( typeof attr != 'undefined' ) {
+            aln_args[attr] = gf_parts[2];
+          }
+          break;
+        case '#=GC': // <feature> <Generic per-column annotation>
+          let gc_parts = line.split(/\s+/, 3);
+          if ( gc_parts.length != 3 ) {
+            console.error( `expected 3 columns from GC line (line: ${line_count})` );
+            return;
+          }
+          let col_ann = <ColumnAnnotation> { feature: gc_parts[1], sequence: gc_parts[2] };
+          column_annotations.push( col_ann );
+          break;
+        case '#=GS': // <seqname> <feature> <Generic per-sequence annotation>
+          process_gs_line( line );
+          break;
+        case '#=GR': // <seqname> <feature> <Generic per-residue annotation>
+          let gr_parts = line.split(/\s+/, 4);          
+          console.log( "#=GR parsing not yet implemented..." );
+          break;
+        default:
+          let seq_parts = line.split(/\s+/);
+          let seq_id = seq_parts[0];
+          let seq = seq_parts[1];
+          sequences_by_id[ seq_id ] = seq;
+          break;
+      }
+    }
+    
+    // ****HERE****
+    
+    // fold everything back together
+    
+    // alignment expects Member[]
+    
+    let aln = new Alignment();
+    
+    sequence_annotations_by_id.forEach( (seq_data, id) => {
+      let sequence = sequences_by_id[ id ];
+      let member = new Member({
+        id: seq_data.seq_id,
+        label: seq_data.accession,
+        source: 'uniprot',
+        db_version: 'latest',
+        organism: seq_data.organism,
+        sequence: sequence,
+        //domain: Domain,
+        //annotations: seq_data.db_refs,
+      });
+      aln.members.push( member );
+    });
+    
+    aln.column_annotations = column_annotations;
+    
+    return aln;
+  }
     
   static parseUniprot(uniprot_raw: string) : Uniprot {
     
@@ -94,6 +253,7 @@ export class Utils {
     
     return uniprot;
   }
+
 
   static getMembersFromFasta(fasta_raw: string) : Member[] {
 

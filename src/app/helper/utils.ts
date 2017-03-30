@@ -1,29 +1,86 @@
 import { Member } from '../members/member';
 import { Segment, SegmentPosition, SegmentCoordinateType } from '../segment';
-import { ColumnAnnotation, Alignment } from '../alignment';
-import { Annotation } from '../annotations/annotation';
+import { ColumnAnnotation, Alignment, IAlignment } from '../alignment';
+import { Annotation, StructuralAnnotation } from '../annotations/annotation';
 import { Uniprot } from '../uniprot';
 import { Domain } from '../domain';
+import * as _ from 'lodash';
 
-class SequenceDatabaseReference {
+class DatabaseRef {
   db_name: string;
   db_ids: string[] = [];
 }
 
-class SequenceAnnotation {
+interface ReferenceSequenceI {
+  seq_id: string;
+  feature: string;
+  accession: string;
+  organism?: string;
+  sequence?: string;
+  segments?: Segment[];
+  annotations?: Annotation[];
+}
+
+// temporary data structure that matches the 
+class ReferenceSequence {
   seq_id: string;
   feature: string;
   accession: string;
   organism: string;
+  sequence: string = '';
   segments: Segment[] = [];
-  db_refs: SequenceDatabaseReference[] = [];
+  annotations: Annotation[] = [];
+  db_ref_by_name: Array<DatabaseRef> = [];
+
+  constructor(opts?: ReferenceSequenceI) {
+    this.db_ref_by_name = [];
+    this.segments = [];
+    if ( opts ) {
+      this.seq_id = opts.seq_id;
+      this.feature = opts.feature;
+      this.accession = opts.accession;
+      if ( opts.organism ) { 
+        this.organism = opts.organism;
+      }
+      this.segments = opts.segments || []; 
+    }
+  }
+  
+  addDbRef(ref:DatabaseRef):void {
+    if( typeof this.db_ref_by_name[ ref.db_name ] === 'undefined' ) {
+      this.db_ref_by_name[ ref.db_name ] = ref;
+    }
+    else {
+      // concatenate all ids into one array indexed by db_name 
+      let ref_by_name = this.db_ref_by_name[ ref.db_name ];
+      ref.db_ids.forEach( (id) => ref_by_name.db_ids.push(id) );
+    }
+  }
+  
+  getDbRefs() {
+    return this.db_ref_by_name;
+  }
+
+  getDbRef(name: string) {
+    return this.db_ref_by_name[ name ];
+  }
+
+  setProp( prop: keyof ReferenceSequence, value: any ) {
+    this[prop] = value;
+  }
+  
+  getProp( prop: keyof ReferenceSequence ) {
+    return this[prop];
+  }
+
 }
 
-export type SequenceSourceToCoordinate = "CATH" | "BIOMAP";
+export type SequenceSourceToCoordinate = "CATH" | "BIOMAP" | "UNIPROT";
 
 export const SequenceSourceToCoordinate = {
   CATH: SegmentCoordinateType.PDB as SegmentCoordinateType,
   BIOMAP: SegmentCoordinateType.UNIPROT as SegmentCoordinateType,
+  UNIPROT: SegmentCoordinateType.UNIPROT as SegmentCoordinateType,
 }
 
 var stockholm_feature_to_attr = {
@@ -42,10 +99,9 @@ export class Utils {
     
   static parseStockholm( stockholm_raw: string ) : Alignment {
 
-    let aln_args = {};
+    let aln_args: IAlignment = new IAlignment();
 
-    let sequences_by_id = {};
-    let sequence_annotations_by_id: SequenceAnnotation[];
+    let sequence_by_id: Array<ReferenceSequence> = [];
     let column_annotations = [];
 
     let lines = stockholm_raw.split('\n');
@@ -55,70 +111,59 @@ export class Utils {
     
     let re_match_seqid = new RegExp( /^(.*?)\/([0-9,\-_]+)$/ );
     let re_split_segments = new RegExp( /[,_]/ );
-    let re_split_gs_dr = new RegExp( /;\s+/ );
+    let re_split_gs_dr = new RegExp( /\s*;\s*/ );
 
     let process_gs_line = function(line: string): void {
-      let gs_parts = line.split(/\s+/, 4);
+      let gs_parts = line.split(/\s+/);
+      gs_parts.shift();
+      let seq_id = gs_parts.shift();
+      let feature = gs_parts.shift();
+      let content = gs_parts.join( " " );
+
+      // console.log( "#=GS ", gs_parts, seq_id, feature, content );
       
-      let seq_id = gs_parts[1];
-      let feature = gs_parts[2];
-      let content = gs_parts[3];
-      
-      let seq_ann = sequence_annotations_by_id[seq_id];
-      if ( typeof seq_ann === 'undefined' ) {
-        let seq_id_parts = seq_id.match( re_match_seqid );
-        if ( !seq_id_parts || seq_id_parts.length != 2 ) {
-          console.error( `failed to parse sequence range from id '${seq_id}'` );
-          return;
-        }
-        let accession = seq_id_parts[0];
-        let segments_raw = seq_id_parts[1].split( re_split_segments );
-        let segments: Segment[] = [];
-        for ( let seg_str in segments_raw ) {
-          let seg_parts = seg_str.split('-');
-          let segment = new Segment();
-          segment.setPosition( 'START', SegmentCoordinateType.UNIPROT, seg_parts[0] );
-          segment.setPosition( 'STOP', SegmentCoordinateType.UNIPROT, seg_parts[1] );
-          segments.push(segment);
-        }
-        seq_ann = <SequenceAnnotation> {
-          seq_id,
-          accession,
-          segments
-        };
-        sequence_annotations_by_id[ seq_id ] = seq_ann;
+      let ref_seq: ReferenceSequence = sequence_by_id[seq_id];      
+      if ( typeof ref_seq === 'undefined' ) {
+        let domain : Domain = Utils.getDomainFromSequenceId( SegmentCoordinateType.UNIPROT, seq_id );
+        ref_seq = new ReferenceSequence();
+        ref_seq.seq_id = seq_id;
+        ref_seq.segments = domain.segments;
+        sequence_by_id[ seq_id ] = ref_seq;
       }
       
-      seq_ann.feature = feature;
-      
       if ( feature == 'DR' ) {
-        let dr_parts = content.split( re_split_gs_dr );
+        let dr_parts = _.without( content.split( re_split_gs_dr ), '' );
         let db_name = dr_parts.shift();
-        let db_ids = dr_parts;
-        let db_ref = <SequenceDatabaseReference> { db_name, db_ids };
-        seq_ann.db_refs.push( db_ref );
+        let db_ids = dr_parts.map( (p) => { return p.trim() } );
+        let db_ref: DatabaseRef = { db_name, db_ids };
+        ref_seq.addDbRef( db_ref );
+        // console.log( `DR '${content}'`, dr_parts, db_name, db_ids, ref_seq );
       }
       else {
         let attr = stockholm_feature_to_attr[feature];
+        let ann = new Annotation( { type: feature, id: attr } );
+        //console.log( `Seq[${seq_id}] : adding feature '${feature}' as attribute '${attr}' (content: '${content}')` );
         if ( typeof attr != 'undefined' ) {
-          seq_ann[attr] = content;
+          ref_seq.setProp( attr, content );
         }
       }
     };
     
     for ( let line of lines ) {
       line_count++;
-      line.replace(/\s+$/, '');                  // chomp new line chars
+      line = line.trim();                       // chomp new line chars
       if ( line.length == 0 ) { continue }       // ignore blank lines
       if ( line.substr(0,2) == '//' ) { break }  // end of alignment
       let line_type = line.substr(0,4);
+      //console.log( "LINE: ", line_count, line_type, `'${line}'` );
       switch (line_type) {
         case '#=GF': // <feature> <Generic per-file annotation>
-          let gf_parts = line.split(/\s+/, 3);
-          let feature = gf_parts[1];
+          let gf_parts = line.split(/\s+/);
+          gf_parts.shift();               // #=GF
+          let feature = gf_parts.shift(); // <feature>
           let attr = stockholm_feature_to_attr[feature];
-          if ( typeof attr != 'undefined' ) {
-            aln_args[attr] = gf_parts[2];
+          if ( typeof attr !== 'undefined' ) {
+            aln_args[attr] = gf_parts.join(" ");
           }
           break;
         case '#=GC': // <feature> <Generic per-column annotation>
@@ -127,7 +172,7 @@ export class Utils {
             console.error( `expected 3 columns from GC line (line: ${line_count})` );
             return;
           }
-          let col_ann = <ColumnAnnotation> { feature: gc_parts[1], sequence: gc_parts[2] };
+          let col_ann: ColumnAnnotation = { feature: gc_parts[1], sequence: gc_parts[2] };
           column_annotations.push( col_ann );
           break;
         case '#=GS': // <seqname> <feature> <Generic per-sequence annotation>
@@ -141,33 +186,54 @@ export class Utils {
           let seq_parts = line.split(/\s+/);
           let seq_id = seq_parts[0];
           let seq = seq_parts[1];
-          sequences_by_id[ seq_id ] = seq;
+          sequence_by_id[ seq_id ].setProp( 'sequence', seq );
           break;
       }
     }
+      
+    let aln = new Alignment( aln_args );
     
-    // ****HERE****
-    
-    // fold everything back together
-    
-    // alignment expects Member[]
-    
-    let aln = new Alignment();
-    
-    sequence_annotations_by_id.forEach( (seq_data, id) => {
-      let sequence = sequences_by_id[ id ];
+    for( let id in sequence_by_id ) {  
+      let seq = sequence_by_id[ id ];
+
+      let domain = Utils.getDomainFromSequenceId( SegmentCoordinateType.UNIPROT, id );      
+      let annotations: Annotation[] = [];
+      
+      let db_refs = seq.getDbRefs();
+      for ( let db_type in db_refs ) {
+        let db_ref: DatabaseRef = db_refs[db_type];
+        _.map( db_ref.db_ids, function(db_id) {
+          let type = db_ref.db_name;
+          let id = db_id;
+          let description = undefined;
+          let annotation; // Annotation | StructuralAnnotation
+          if ( type == 'CATH' ) {
+            annotation = new StructuralAnnotation();
+            let domain = Utils.getDomainFromSequenceId( 'CATH', id );
+            annotation.pdbDomain = domain;
+          }
+          else {
+            annotation = new Annotation();
+          }
+          annotation.type = db_ref.db_name;
+          annotation.id = db_id;
+          
+          annotations.push( annotation );            
+        })        
+      }
+      
       let member = new Member({
-        id: seq_data.seq_id,
-        label: seq_data.accession,
+        id: seq.seq_id,
+        label: seq.accession,
         source: 'uniprot',
         db_version: 'latest',
-        organism: seq_data.organism,
-        sequence: sequence,
-        //domain: Domain,
-        //annotations: seq_data.db_refs,
+        organism: seq.organism,
+        sequence: seq.sequence,
+        domain,
+        annotations,
       });
       aln.members.push( member );
-    });
+    }
     
     aln.column_annotations = column_annotations;
     
@@ -278,8 +344,6 @@ export class Utils {
       }
       member.sequence = sequence;
       
-      console.log( "Sequence", member );
-
       members.push( member );
     }
 

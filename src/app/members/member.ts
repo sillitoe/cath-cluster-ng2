@@ -1,4 +1,4 @@
-import { Annotation } from '../annotations/annotation';
+import { Annotation, StructuralAnnotation } from '../annotations/annotation';
 import { Domain } from '../domain';
 import { Segment } from '../segment';
 import { Utils } from '../helper/utils';
@@ -53,17 +53,15 @@ export class Member {
     }
   }
   
-  hasPdbId(): boolean {
-    return typeof this.getPdbId() !== 'undefined';
+  hasStructuralAnnotations(): boolean {
+    let pdb_ann: Annotation = _.find( this.annotations, (a) => { a instanceof StructuralAnnotation } );
+    return typeof pdb_ann == 'undefined' ? true : false;
   }
   
-  getPdbId(): string {
-    if ( this.source == 'cath' ) {
-      return this.id.substr(0, 4);
-    }
-    else {
-      return;
-    }
+  getStructuralAnnotations(): StructuralAnnotation[] {
+    let anns: StructuralAnnotation[];
+    anns = <StructuralAnnotation[]>_.filter( this.annotations, (a) => a instanceof StructuralAnnotation );
+    return anns;
   }
   
   filterAnnotationsByType(type: string): Annotation[] {

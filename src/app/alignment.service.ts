@@ -2,11 +2,11 @@ import { Injectable } from '@angular/core';
 
 import { Alignment } from './alignment';
 
-import { ALIGNMENT } from './mock-alignment';
+import { STOCKHOLM_ALIGNMENT } from './mock-alignment';
 
 @Injectable()
 export class AlignmentService {
     getAlignment(): Promise<Alignment> {
-      return Promise.resolve(ALIGNMENT);
+      return Promise.resolve( STOCKHOLM_ALIGNMENT );
     }
 }

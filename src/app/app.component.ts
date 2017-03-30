@@ -136,13 +136,19 @@ export class AppComponent implements OnInit {
   public getAlignment() {
     this.alignmentService.getAlignment().then( alignment => {
       this.alignment = alignment;
-      let member: Member = this.alignment.getFirstMemberWithStructure();
-      if ( member && member.domain ) {
-        console.log( "getAlignment", member, member.domain );
-        this.onSelectDomain( member.domain );
+      console.log( "getAlignment", alignment );
+      let structuralRep: Member = this.alignment.getFirstMemberWithStructure();
+      this.name = alignment.description;
+      this.accession = alignment.id;
+      if ( structuralRep ) {
+        let pdbAnns = structuralRep.getStructuralAnnotations();
+        console.log( "structuralAnnotations", structuralRep, pdbAnns );
+        let firstPdbAnnotation = pdbAnns[0];
+        this.onSelectDomain( firstPdbAnnotation.pdbDomain );
       }
     });
   }
+  
 
   private parseAccession(ffid: string): void {
     var parts = ffid.split('/');

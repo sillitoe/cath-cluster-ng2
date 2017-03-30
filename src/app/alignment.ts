@@ -13,7 +13,7 @@ export class ColumnAnnotation {
 export class IAlignment {
   id: string;
   label: string;
-  description: string;
+  description?: string;
   members?: Member[];  
   column_annotations?: ColumnAnnotation[];
 }
@@ -21,7 +21,7 @@ export class IAlignment {
 export class Alignment {
   id: string;
   label: string;
-  description: string;
+  description?: string;
   members?: Member[] = [];
   column_annotations?: ColumnAnnotation[] = [];
   
@@ -36,7 +36,7 @@ export class Alignment {
   }
 
   getFirstMemberWithStructure(): Member {
-    var member: Member = _.find( this.members, function(m) { return m.hasPdbId() } );
+    var member: Member = _.find( this.members, (m) => m.hasStructuralAnnotations() );
     return member;
   }
 }

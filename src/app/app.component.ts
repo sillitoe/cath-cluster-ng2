@@ -5,6 +5,7 @@ import { Input, ElementRef, Component, OnInit } from '@angular/core';
 import { Alignment } from './alignment';
 import { Member } from './members/member';
 import { Domain } from './domain';
+import { Annotation, GoAnnotation, EcAnnotation } from './annotations/annotation';
 
 import { UniprotService } from './uniprot.service';
 import { AlignmentService } from './alignment.service';
@@ -110,6 +111,9 @@ export class AppComponent implements OnInit {
 
   selectedDomain: Domain;
 
+  goLookup: Array<GoAnnotation>;
+  ecLookup: Array<EcAnnotation>;
+
   @Input()
   name: string = '<Funfam name>';
 
@@ -146,6 +150,9 @@ export class AppComponent implements OnInit {
         let firstPdbAnnotation = pdbAnns[0];
         this.onSelectDomain( firstPdbAnnotation.pdbDomain );
       }
+      
+      // get descriptions for all the uniq GO / EC terms
+      let unique_go_anns = alignment.filterAllAnnotations( { type: 'GO' } );
     });
   }
   

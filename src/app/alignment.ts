@@ -36,7 +36,18 @@ export class Alignment {
   }
 
   getFirstMemberWithStructure(): Member {
-    var member: Member = _.find( this.members, (m) => m.hasStructuralAnnotations() );
+    let member: Member = _.find( this.members, (m) => m.hasStructuralAnnotations() );
     return member;
   }
+  
+  filterAllAnnotations(filterArg: any): Annotation[] {
+    
+    let all_annotations: Annotation[] = _.flatten( _.map( this.members, (m) => { return m.annotations } ) );
+    let uniq_annotations: Annotation[] = _.unionBy( all_annotations, (a) => { return a.id } );
+    console.log( "uniq_annotations", uniq_annotations );
+    let filtered_annotations = _.filter( uniq_annotations, filterArg );
+    console.log( "filtered_annotations", filtered_annotations );    
+    return filtered_annotations;
+  }
+  
 }

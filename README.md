@@ -8,6 +8,16 @@ Just started...
 
 ## Dev
 
+This project uses npm. For more information on npm, see:
+
+https://docs.npmjs.com/getting-started/what-is-npm
+
+Installing npm modules locally (without sudo) can be very useful:
+
+https://docs.npmjs.com/getting-started/fixing-npm-permissions
+
+To start using the project:
+
 ```
 git clone https://github.com/sillitoe/cath-cluster-ng2.git
 npm install

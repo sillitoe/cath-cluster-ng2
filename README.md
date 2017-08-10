@@ -6,9 +6,9 @@ Web component to view collections of protein structures (Angular2)
 
 Just started...
 
-## Dev
+## Getting started
 
-This project uses npm. For more information on npm, see:
+This project uses npm to organise the code and dependencies. For more information on npm, see:
 
 https://docs.npmjs.com/getting-started/what-is-npm
 
